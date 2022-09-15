@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"dgb/meter.readings/application"
+	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -11,11 +12,15 @@ import (
 
 var client *mongo.Client
 
-func GetReading(id string, config application.Configuration) bson.M {
+type Repository struct {
+	config application.Configuration
+}
 
-	connect(config)
+func (repository *Repository) Get(id string) bson.M {
 
-	coll := client.Database(config.MONGO_DB).Collection(config.MONGO_COLLECTION)
+	connect(repository.config)
+
+	coll := client.Database(repository.config.MONGO_DB).Collection(repository.config.MONGO_COLLECTION)
 
 	filter := bson.M{"_id": id}
 
@@ -34,6 +39,50 @@ func GetReading(id string, config application.Configuration) bson.M {
 	return result
 }
 
+func (repository *Repository) Insert(data bson.M) (id interface{}, err error) {
+
+	connect(repository.config)
+
+	coll := client.Database(repository.config.MONGO_DB).Collection(repository.config.MONGO_COLLECTION)
+	result, err := coll.InsertOne(context.TODO(), data)
+
+	if err != nil {
+		return nil, errors.New("Could not insert document")
+	}
+
+	return result.InsertedID, nil
+}
+
+func (repository *Repository) Update(id interface{}, data bson.M) error {
+
+	connect(repository.config)
+
+	coll := client.Database(repository.config.MONGO_DB).Collection(repository.config.MONGO_COLLECTION)
+	filter := bson.D{{"_id", id}}
+	_, err := coll.ReplaceOne(context.TODO(), filter, data)
+
+	if err != nil {
+		return errors.New("Could not insert document")
+	}
+
+	return nil
+}
+
+func (repository *Repository) Delete(id interface{}) (deletedCount int, err error) {
+
+	connect(repository.config)
+
+	coll := client.Database(repository.config.MONGO_DB).Collection(repository.config.MONGO_COLLECTION)
+	filter := bson.D{{"_id", id}}
+	result, err := coll.DeleteOne(context.TODO(), filter)
+
+	if result.DeletedCount < 0 || err != nil {
+		return int(result.DeletedCount), errors.New("Could not delete")
+	}
+
+	return int(result.DeletedCount), nil
+}
+
 func connect(config application.Configuration) {
 
 	if client != nil {
@@ -45,5 +94,11 @@ func connect(config application.Configuration) {
 
 	if err != nil {
 		panic(err)
+	}
+}
+
+func NewRepository(cfg application.Configuration) *Repository {
+	return &Repository{
+		cfg,
 	}
 }

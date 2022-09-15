@@ -23,8 +23,17 @@ func (response *Response) NotFound(p ResponseParams) {
 	response.Write(p.w, 404, p.result)
 }
 
+func (response *Response) BadRequest(p ResponseParams) {
+	response.Write(p.w, 403, p.result)
+}
+
+func (response *Response) ServerError(p ResponseParams) {
+	response.Write(p.w, 500, p.result)
+}
+
 func (response *Response) Write(w http.ResponseWriter, statusCode int, result any) {
 	w.WriteHeader(statusCode)
+	w.Header().Add("Content-Type", "application/json")
 
 	if result != nil {
 		json.NewEncoder(w).Encode(result)

@@ -6,8 +6,6 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
-type ConfigurationService struct{}
-
 type Configuration struct {
 	MONGO_CONNECTION string
 	MONGO_DB         string
@@ -15,16 +13,18 @@ type Configuration struct {
 	HTTP_PORT        string
 }
 
-func (configuration *ConfigurationService) GetConfig(env string) Configuration {
+func (configuration *Configuration) getConfig(env string) {
+	gonfig.GetConf(fmt.Sprintf("./%s_config.json", env), configuration)
+}
+
+func NewConfig(env MeterEnvironment) Configuration {
 
 	if env == "" {
-		panic("Environment missing for configuration")
+		panic("No environment supplied to load config")
 	}
 
-	config := Configuration{}
-	fileName := fmt.Sprintf("./%s_config.json", env)
+	configuration := &Configuration{}
+	configuration.getConfig(string(env))
 
-	gonfig.GetConf(fileName, &config)
-
-	return config
+	return *configuration
 }

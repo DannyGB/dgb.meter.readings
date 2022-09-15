@@ -11,11 +11,11 @@ import (
 
 var client *mongo.Client
 
-func GetReading(id string, cfg application.Configuration) bson.M {
+func GetReading(id string, config application.Configuration) bson.M {
 
-	connect(cfg)
+	connect(config)
 
-	coll := client.Database("sample_airbnb").Collection("listingsAndReviews")
+	coll := client.Database(config.MONGO_DB).Collection(config.MONGO_COLLECTION)
 
 	filter := bson.M{"_id": id}
 
@@ -34,14 +34,14 @@ func GetReading(id string, cfg application.Configuration) bson.M {
 	return result
 }
 
-func connect(cfg application.Configuration) {
+func connect(config application.Configuration) {
 
 	if client != nil {
 		return
 	}
 
 	var err error
-	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(cfg.MONGO_CONNECTION))
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(config.MONGO_CONNECTION))
 
 	if err != nil {
 		panic(err)

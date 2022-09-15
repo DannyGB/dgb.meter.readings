@@ -10,6 +10,8 @@ type ConfigurationService struct{}
 
 type Configuration struct {
 	MONGO_CONNECTION string
+	MONGO_DB         string
+	MONGO_COLLECTION string
 	HTTP_PORT        string
 }
 

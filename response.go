@@ -32,8 +32,8 @@ func (response *Response) ServerError(p ResponseParams) {
 }
 
 func (response *Response) Write(w http.ResponseWriter, statusCode int, result any) {
-	w.WriteHeader(statusCode)
 	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 
 	if result != nil {
 		json.NewEncoder(w).Encode(result)

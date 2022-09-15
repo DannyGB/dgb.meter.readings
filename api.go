@@ -4,15 +4,17 @@ import (
 	"dgb/meter.readings/application"
 	"dgb/meter.readings/database"
 	"dgb/meter.readings/viewmodels"
+	"log"
 
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/gorilla/mux"
+
+	"strconv"
 )
 
 const route = "/reading"
@@ -24,11 +26,24 @@ type ReadingApi struct {
 }
 
 func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
-	api.response.Ok(ResponseParams{w: w, result: "Get Readings"})
+	skip := r.FormValue("skip")
+	take := r.FormValue("take")
+
+	s, _ := strconv.Atoi(skip)
+	t, _ := strconv.Atoi(take)
+
+	result := api.repository.GetAll(database.PageParams{Skip: s, Take: t})
+
+	if result == nil {
+		api.response.NotFound(ResponseParams{w: w})
+		return
+	}
+
+	api.response.Ok(ResponseParams{w, result})
 }
 
 func (api *ReadingApi) getById(w http.ResponseWriter, r *http.Request) {
-	result := api.repository.Get(mux.Vars(r)["id"])
+	result := api.repository.GetSingle(mux.Vars(r)["id"])
 
 	if result == nil {
 		api.response.NotFound(ResponseParams{w: w})
@@ -95,11 +110,16 @@ func (api *ReadingApi) handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	subRoute := myRouter.PathPrefix(route).Subrouter()
 
-	subRoute.HandleFunc("/", api.get).Methods(http.MethodGet)
 	subRoute.HandleFunc("/{id}", api.getById).Methods(http.MethodGet)
 	subRoute.HandleFunc("/{id}", api.update).Methods(http.MethodPut)
 	subRoute.HandleFunc("/{id}", api.delete).Methods(http.MethodDelete)
 	subRoute.HandleFunc("/{id}", api.create).Methods(http.MethodPost)
+
+	subRoute.
+		Path("/").
+		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}").
+		Methods(http.MethodGet).
+		HandlerFunc(api.get)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", api.config.HTTP_PORT), subRoute))
 }

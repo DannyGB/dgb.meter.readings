@@ -7,17 +7,17 @@
 package main
 
 import (
-	"dgb/meter.readings/application"
-	"dgb/meter.readings/database"
+  "dgb/meter.readings/application"
+  "dgb/meter.readings/database"
 )
 
 // Injectors from container.go:
 
 func CreateApi() *ReadingApi {
-	response := &Response{}
-	meterEnvironment := application.NewMeterEnvironment()
-	configuration := application.NewConfig(meterEnvironment)
-	repository := database.NewRepository(configuration)
-	readingApi := NewApi(response, configuration, repository)
-	return readingApi
+  response := &Response{}
+  meterEnvironment := application.NewMeterEnvironment()
+  configuration := application.NewConfig(meterEnvironment)
+  repository := database.NewRepository(configuration)
+  readingApi := NewApi(response, configuration, repository)
+  return readingApi
 }

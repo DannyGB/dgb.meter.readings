@@ -3,7 +3,6 @@ package application
 import (
 	"dgb/meter.readings/internal/configuration"
 	"dgb/meter.readings/internal/database"
-	models "dgb/meter.readings/internal/models"
 	"log"
 
 	"encoding/json"
@@ -85,7 +84,7 @@ func (api *ReadingApi) create(w http.ResponseWriter, r *http.Request) {
 		api.response.ServerError(ResponseParams{W: w})
 	}
 
-	api.response.Created(ResponseParams{w, &models.Created{
+	api.response.Created(ResponseParams{w, &Created{
 		Url: fmt.Sprintf("%v/%v", route, id),
 	}})
 }

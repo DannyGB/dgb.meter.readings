@@ -2,9 +2,7 @@
 
 A playground for the Go language
 
-# Installation
-
-Requires:
+# Pre-requisites
 
 - [Go](https://go.dev/)
 - A [MongoDB](https://www.mongodb.com) instance
@@ -28,3 +26,23 @@ The `_config.json` file should look like this:
     "HTTP_PORT": "<the port the Api should listen on"
 }
 ```
+
+# Usage
+
+The included Dockerfile can be used to run the application
+
+Under linux or Wsl create a symlink to the dockerfile in the root directory using
+
+    ln -s ./build/Dockerfile Dockerfile
+
+Build the image from the root directory
+
+    docker build -t <your tag> .
+
+The docker image contains an environment variable argument called `ENVIRONMENT` that can be supplied to change the config that the application loads on startup. The default value us `dev`
+
+    docker build -t <your tag> --build-arg ENVIRONMENT=prod .
+
+Run the image
+
+    docker run -it -d --rm -p 8000:8000 <your tag>

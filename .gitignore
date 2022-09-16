@@ -21,3 +21,6 @@ go.work
 *.rdb
 
 *_config.json
+
+# Ignore the Dockerfile symlink
+/Dockerfile

@@ -3,20 +3,19 @@ package application
 import (
 	"dgb/meter.readings/internal/configuration"
 	"dgb/meter.readings/internal/database"
-	"log"
-
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"strconv"
 
 	"github.com/gorilla/mux"
-
-	"strconv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const route = "/reading"
+const SKIP = "skip"
+const TAKE = "take"
 
 type ReadingApi struct {
 	response   *Response
@@ -25,19 +24,21 @@ type ReadingApi struct {
 }
 
 func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
-	skip := r.FormValue("skip")
-	take := r.FormValue("take")
+	skip, _ := strconv.Atoi(r.FormValue(SKIP))
+	take, _ := strconv.Atoi(r.FormValue(TAKE))
 
-	s, _ := strconv.Atoi(skip)
-	t, _ := strconv.Atoi(take)
-
-	result := api.repository.GetAll(database.PageParams{Skip: s, Take: t})
+	result := api.repository.GetAll(database.PageParams{Skip: skip, Take: take})
 
 	if result == nil {
 		api.response.NotFound(ResponseParams{W: w})
 		return
 	}
 
+	api.response.Ok(ResponseParams{w, result})
+}
+
+func (api *ReadingApi) count(w http.ResponseWriter, r *http.Request) {
+	result := api.repository.Count()
 	api.response.Ok(ResponseParams{w, result})
 }
 
@@ -109,15 +110,20 @@ func (api *ReadingApi) HandleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	subRoute := myRouter.PathPrefix(route).Subrouter()
 
-	subRoute.HandleFunc("/{id}", api.getById).Methods(http.MethodGet)
-	subRoute.HandleFunc("/{id}", api.update).Methods(http.MethodPut)
-	subRoute.HandleFunc("/{id}", api.delete).Methods(http.MethodDelete)
-	subRoute.HandleFunc("/{id}", api.create).Methods(http.MethodPost)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", func(w http.ResponseWriter, r *http.Request) {
+		api.response.Ok(ResponseParams{W: w})
+	}).Methods(http.MethodOptions)
+
+	subRoute.HandleFunc("/count", api.count).Methods(http.MethodGet)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.getById).Methods(http.MethodGet)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.update).Methods(http.MethodPut)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.delete).Methods(http.MethodDelete)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.create).Methods(http.MethodPost)
 
 	subRoute.
 		Path("/").
 		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}").
-		Methods(http.MethodGet).
+		Methods(http.MethodGet, http.MethodOptions).
 		HandlerFunc(api.get)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", api.config.HTTP_PORT), subRoute))

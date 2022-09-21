@@ -33,6 +33,10 @@ func (response *Response) ServerError(p ResponseParams) {
 
 func (response *Response) Write(w http.ResponseWriter, statusCode int, result any) {
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Add("Access-Control-Allow-Methods", "*")
+
 	w.WriteHeader(statusCode)
 
 	if result != nil {

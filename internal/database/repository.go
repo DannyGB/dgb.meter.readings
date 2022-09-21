@@ -47,6 +47,20 @@ func (repository *Repository) GetAll(pageParams PageParams) []primitive.M {
 	return results
 }
 
+func (repository *Repository) Count() int64 {
+	connect(repository.config)
+	coll := repository.getCollection()
+
+	filter := bson.D{}
+	count, err := coll.CountDocuments(context.TODO(), filter)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return count
+}
+
 func (repository *Repository) GetSingle(id string) bson.M {
 
 	connect(repository.config)

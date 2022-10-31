@@ -16,6 +16,7 @@ import (
 const route = "/reading"
 const SKIP = "skip"
 const TAKE = "take"
+const SORT = "sort"
 
 type ReadingApi struct {
 	response   *Response
@@ -26,8 +27,9 @@ type ReadingApi struct {
 func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
 	skip, _ := strconv.Atoi(r.FormValue(SKIP))
 	take, _ := strconv.Atoi(r.FormValue(TAKE))
+	sort := r.FormValue(SORT)
 
-	result := api.repository.GetAll(database.PageParams{Skip: skip, Take: take})
+	result := api.repository.GetAll(database.PageParams{Skip: skip, Take: take, SortDirection: sort})
 
 	if result == nil {
 		api.response.NotFound(ResponseParams{W: w})
@@ -94,7 +96,7 @@ func (api *ReadingApi) delete(w http.ResponseWriter, r *http.Request) {
 
 	deletedCount, err := api.repository.Delete(mux.Vars(r)["id"])
 
-	if deletedCount < 0 {
+	if deletedCount <= 0 {
 		api.response.NotFound(ResponseParams{W: w})
 	}
 
@@ -122,7 +124,7 @@ func (api *ReadingApi) HandleRequests() {
 
 	subRoute.
 		Path("/").
-		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}").
+		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}", "sort", "{sort}").
 		Methods(http.MethodGet, http.MethodOptions).
 		HandlerFunc(api.get)
 

@@ -18,17 +18,23 @@ type Repository struct {
 }
 
 type PageParams struct {
-	Skip int
-	Take int
+	Skip          int
+	Take          int
+	SortDirection string
 }
 
 func (repository *Repository) GetAll(pageParams PageParams) []primitive.M {
 
 	connect(repository.config)
 	coll := repository.getCollection()
+	sortDir := 1
+
+	if pageParams.SortDirection == "desc" {
+		sortDir = -1
+	}
 
 	filter := bson.D{}
-	opts := options.Find().SetLimit(int64(pageParams.Take)).SetSkip(int64(pageParams.Skip))
+	opts := options.Find().SetSort(bson.D{{"readingdate", sortDir}, {"reading", sortDir}}).SetLimit(int64(pageParams.Take)).SetSkip(int64(pageParams.Skip))
 	cursor, err := coll.Find(context.TODO(), filter, opts)
 
 	if err == mongo.ErrNoDocuments {
@@ -120,7 +126,7 @@ func (repository *Repository) Delete(id interface{}) (deletedCount int, err erro
 	filter := bson.D{{"_id", id}}
 	result, err := coll.DeleteOne(context.TODO(), filter)
 
-	if result.DeletedCount < 0 || err != nil {
+	if result.DeletedCount <= 0 || err != nil {
 		return int(result.DeletedCount), errors.New("Could not delete")
 	}
 

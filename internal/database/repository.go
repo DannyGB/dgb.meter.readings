@@ -17,24 +17,17 @@ type Repository struct {
 	config configuration.Configuration
 }
 
-type PageParams struct {
-	Skip          int
-	Take          int
-	SortDirection string
-}
-
 func (repository *Repository) GetAll(pageParams PageParams) []primitive.M {
 
 	connect(repository.config)
 	coll := repository.getCollection()
-	sortDir := 1
+	sortDir := pageParams.GetSortDirection()
+	filter := pageParams.GetFilters()
 
-	if pageParams.SortDirection == "desc" {
-		sortDir = -1
-	}
+	opts := options.Find().
+		SetSort(bson.D{{Key: "readingdate", Value: sortDir}, {Key: "reading", Value: sortDir}}).
+		SetLimit(int64(pageParams.Take)).SetSkip(int64(pageParams.Skip))
 
-	filter := bson.D{}
-	opts := options.Find().SetSort(bson.D{{"readingdate", sortDir}, {"reading", sortDir}}).SetLimit(int64(pageParams.Take)).SetSkip(int64(pageParams.Skip))
 	cursor, err := coll.Find(context.TODO(), filter, opts)
 
 	if err == mongo.ErrNoDocuments {
@@ -53,11 +46,11 @@ func (repository *Repository) GetAll(pageParams PageParams) []primitive.M {
 	return results
 }
 
-func (repository *Repository) Count() int64 {
+func (repository *Repository) Count(pageParams PageParams) int64 {
 	connect(repository.config)
 	coll := repository.getCollection()
+	filter := pageParams.GetFilters()
 
-	filter := bson.D{}
 	count, err := coll.CountDocuments(context.TODO(), filter)
 
 	if err != nil {
@@ -108,7 +101,7 @@ func (repository *Repository) Update(id interface{}, data bson.M) error {
 	connect(repository.config)
 	coll := repository.getCollection()
 
-	filter := bson.D{{"_id", id}}
+	filter := bson.D{{Key: "_id", Value: id}}
 	_, err := coll.ReplaceOne(context.TODO(), filter, data)
 
 	if err != nil {

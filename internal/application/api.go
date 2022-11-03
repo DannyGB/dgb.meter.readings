@@ -17,6 +17,7 @@ const route = "/reading"
 const SKIP = "skip"
 const TAKE = "take"
 const SORT = "sort"
+const FILTER = "filter"
 
 type ReadingApi struct {
 	response   *Response
@@ -28,8 +29,9 @@ func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
 	skip, _ := strconv.Atoi(r.FormValue(SKIP))
 	take, _ := strconv.Atoi(r.FormValue(TAKE))
 	sort := r.FormValue(SORT)
+	filter := r.FormValue(FILTER)
 
-	result := api.repository.GetAll(database.PageParams{Skip: skip, Take: take, SortDirection: sort})
+	result := api.repository.GetAll(database.PageParams{Skip: skip, Take: take, SortDirection: sort, Filter: filter})
 
 	if result == nil {
 		api.response.NotFound(ResponseParams{W: w})
@@ -40,7 +42,9 @@ func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *ReadingApi) count(w http.ResponseWriter, r *http.Request) {
-	result := api.repository.Count()
+	filter := r.FormValue(FILTER)
+
+	result := api.repository.Count(database.PageParams{Filter: filter})
 	api.response.Ok(ResponseParams{w, result})
 }
 
@@ -116,7 +120,12 @@ func (api *ReadingApi) HandleRequests() {
 		api.response.Ok(ResponseParams{W: w})
 	}).Methods(http.MethodOptions)
 
-	subRoute.HandleFunc("/count", api.count).Methods(http.MethodGet)
+	subRoute.
+		Path("/count").
+		Queries("filter", "{filter}").
+		Methods(http.MethodGet).
+		HandlerFunc(api.count)
+
 	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.getById).Methods(http.MethodGet)
 	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.update).Methods(http.MethodPut)
 	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.delete).Methods(http.MethodDelete)
@@ -124,7 +133,7 @@ func (api *ReadingApi) HandleRequests() {
 
 	subRoute.
 		Path("/").
-		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}", "sort", "{sort}").
+		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}", "sort", "{sort}", "filter", "{filter}").
 		Methods(http.MethodGet, http.MethodOptions).
 		HandlerFunc(api.get)
 

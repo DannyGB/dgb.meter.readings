@@ -15,10 +15,11 @@ import (
 // Injectors from wire.go:
 
 func CreateApi() *application.ReadingApi {
-	response := &application.Response{}
 	meterEnvironment := configuration.NewMeterEnvironment()
 	configurationConfiguration := configuration.NewConfig(meterEnvironment)
+	response := application.NewResponse(configurationConfiguration)
 	repository := database.NewRepository(configurationConfiguration)
-	readingApi := application.NewApi(response, configurationConfiguration, repository)
+	middleware := application.NewMiddleware(response)
+	readingApi := application.NewApi(response, configurationConfiguration, repository, middleware)
 	return readingApi
 }

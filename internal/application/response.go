@@ -1,11 +1,15 @@
 package application
 
 import (
+	"dgb/meter.readings/internal/configuration"
 	"encoding/json"
 	"net/http"
 )
 
-type Response struct{}
+type Response struct {
+	config configuration.Configuration
+}
+
 type ResponseParams struct {
 	W      http.ResponseWriter
 	Result any
@@ -33,13 +37,20 @@ func (response *Response) ServerError(p ResponseParams) {
 
 func (response *Response) Write(w http.ResponseWriter, statusCode int, result any) {
 	w.Header().Add("Content-Type", "application/json")
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Origin", response.config.CORS_CLIENTS)
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Add("Access-Control-Allow-Headers", "Authorization")
 	w.Header().Add("Access-Control-Allow-Methods", "*")
 
 	w.WriteHeader(statusCode)
 
 	if result != nil {
 		json.NewEncoder(w).Encode(result)
+	}
+}
+
+func NewResponse(configuration configuration.Configuration) *Response {
+	return &Response{
+		configuration,
 	}
 }

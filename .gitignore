@@ -25,4 +25,4 @@ go.work
 # Ignore the Dockerfile symlink
 /Dockerfile
 
-/cmd
+/cmd/meter.readings/meter.readings

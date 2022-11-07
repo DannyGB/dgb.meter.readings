@@ -11,6 +11,7 @@ type Configuration struct {
 	MONGO_DB         string
 	MONGO_COLLECTION string
 	HTTP_PORT        string
+	CORS_CLIENTS     string
 }
 
 func (configuration *Configuration) getConfig(env string) {

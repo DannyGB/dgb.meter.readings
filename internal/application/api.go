@@ -13,16 +13,18 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const route = "/reading"
+const route = "/api/reading"
 const SKIP = "skip"
 const TAKE = "take"
 const SORT = "sort"
 const FILTER = "filter"
+const ACCESS_CLAIM = "access_as_user"
 
 type ReadingApi struct {
 	response   *Response
 	config     configuration.Configuration
 	repository *database.Repository
+	middleware *Middleware
 }
 
 func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
@@ -116,34 +118,31 @@ func (api *ReadingApi) HandleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	subRoute := myRouter.PathPrefix(route).Subrouter()
 
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", func(w http.ResponseWriter, r *http.Request) {
-		api.response.Ok(ResponseParams{W: w})
-	}).Methods(http.MethodOptions)
-
 	subRoute.
 		Path("/count").
 		Queries("filter", "{filter}").
 		Methods(http.MethodGet).
-		HandlerFunc(api.count)
+		HandlerFunc(api.middleware.Options(api.middleware.Authorize(api.count, ACCESS_CLAIM)))
 
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.getById).Methods(http.MethodGet)
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.update).Methods(http.MethodPut)
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.delete).Methods(http.MethodDelete)
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.create).Methods(http.MethodPost)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.getById, ACCESS_CLAIM))).Methods(http.MethodGet, http.MethodOptions)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.update, ACCESS_CLAIM))).Methods(http.MethodPut, http.MethodOptions)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.delete, ACCESS_CLAIM))).Methods(http.MethodDelete, http.MethodOptions)
+	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.create, ACCESS_CLAIM))).Methods(http.MethodPost, http.MethodOptions)
 
 	subRoute.
 		Path("/").
 		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}", "sort", "{sort}", "filter", "{filter}").
 		Methods(http.MethodGet, http.MethodOptions).
-		HandlerFunc(api.get)
+		HandlerFunc(api.middleware.Options(api.middleware.Authorize(api.get, ACCESS_CLAIM)))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", api.config.HTTP_PORT), subRoute))
 }
 
-func NewApi(response *Response, configuration configuration.Configuration, repository *database.Repository) *ReadingApi {
+func NewApi(response *Response, configuration configuration.Configuration, repository *database.Repository, middleware *Middleware) *ReadingApi {
 	return &ReadingApi{
 		response,
 		configuration,
 		repository,
+		middleware,
 	}
 }

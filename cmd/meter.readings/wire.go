@@ -15,8 +15,9 @@ func CreateApi() *application.ReadingApi {
 	panic(wire.Build(
 		configuration.NewMeterEnvironment,
 		configuration.NewConfig,
-		wire.Struct(new(application.Response), "*"),
+		application.NewResponse,
 		database.NewRepository,
+		application.NewMiddleware,
 		application.NewApi,
 	))
 }

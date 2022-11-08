@@ -13,7 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const route = "/api/reading"
+const route = "/api"
+const readingRoute = "/reading"
 const SKIP = "skip"
 const TAKE = "take"
 const SORT = "sort"
@@ -118,24 +119,32 @@ func (api *ReadingApi) HandleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	subRoute := myRouter.PathPrefix(route).Subrouter()
 
+	subRoute.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		api.response.Write(w, 200, "OK")
+	}).Methods(http.MethodGet)
+
 	subRoute.
-		Path("/count").
+		Path(api.getReadingRoute("count")).
 		Queries("filter", "{filter}").
-		Methods(http.MethodGet).
+		Methods(http.MethodGet, http.MethodOptions).
 		HandlerFunc(api.middleware.Options(api.middleware.Authorize(api.count, ACCESS_CLAIM)))
 
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.getById, ACCESS_CLAIM))).Methods(http.MethodGet, http.MethodOptions)
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.update, ACCESS_CLAIM))).Methods(http.MethodPut, http.MethodOptions)
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.delete, ACCESS_CLAIM))).Methods(http.MethodDelete, http.MethodOptions)
-	subRoute.HandleFunc("/{id:[0-9a-zA\\-]+}", api.middleware.Options(api.middleware.Authorize(api.create, ACCESS_CLAIM))).Methods(http.MethodPost, http.MethodOptions)
+	subRoute.HandleFunc(api.getReadingRoute("{id:[0-9a-zA\\-]+}"), api.middleware.Options(api.middleware.Authorize(api.getById, ACCESS_CLAIM))).Methods(http.MethodGet, http.MethodOptions)
+	subRoute.HandleFunc(api.getReadingRoute("{id:[0-9a-zA\\-]+}"), api.middleware.Options(api.middleware.Authorize(api.update, ACCESS_CLAIM))).Methods(http.MethodPut, http.MethodOptions)
+	subRoute.HandleFunc(api.getReadingRoute("{id:[0-9a-zA\\-]+}"), api.middleware.Options(api.middleware.Authorize(api.delete, ACCESS_CLAIM))).Methods(http.MethodDelete, http.MethodOptions)
+	subRoute.HandleFunc(api.getReadingRoute("{id:[0-9a-zA\\-]+}"), api.middleware.Options(api.middleware.Authorize(api.create, ACCESS_CLAIM))).Methods(http.MethodPost, http.MethodOptions)
 
 	subRoute.
-		Path("/").
+		Path(api.getReadingRoute("/")).
 		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}", "sort", "{sort}", "filter", "{filter}").
 		Methods(http.MethodGet, http.MethodOptions).
 		HandlerFunc(api.middleware.Options(api.middleware.Authorize(api.get, ACCESS_CLAIM)))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", api.config.HTTP_PORT), subRoute))
+}
+
+func (api *ReadingApi) getReadingRoute(subRoute string) string {
+	return fmt.Sprintf("%s/%s", readingRoute, subRoute)
 }
 
 func NewApi(response *Response, configuration configuration.Configuration, repository *database.Repository, middleware *Middleware) *ReadingApi {

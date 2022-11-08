@@ -1,10 +1,6 @@
 package configuration
 
-import (
-	"fmt"
-
-	"github.com/tkanos/gonfig"
-)
+import "os"
 
 type Configuration struct {
 	MONGO_CONNECTION string
@@ -14,10 +10,6 @@ type Configuration struct {
 	CORS_CLIENTS     string
 }
 
-func (configuration *Configuration) getConfig(env string) {
-	gonfig.GetConf(fmt.Sprintf("./%s_config.json", env), configuration)
-}
-
 func NewConfig(env MeterEnvironment) Configuration {
 
 	if env == "" {
@@ -25,7 +17,11 @@ func NewConfig(env MeterEnvironment) Configuration {
 	}
 
 	configuration := &Configuration{}
-	configuration.getConfig(string(env))
+	configuration.CORS_CLIENTS = os.Getenv("METER_READINGS_CORS_CLIENTS")
+	configuration.HTTP_PORT = os.Getenv("METER_READINGS_HTTP_PORT")
+	configuration.MONGO_COLLECTION = os.Getenv("METER_READINGS_MONGO_COLLECTION")
+	configuration.MONGO_DB = os.Getenv("METER_READINGS_MONGO_DB")
+	configuration.MONGO_CONNECTION = os.Getenv("METER_READINGS_MONGO_CONNECTION")
 
 	return *configuration
 }

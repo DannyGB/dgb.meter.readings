@@ -4,6 +4,7 @@ import (
 	"context"
 	"dgb/meter.readings/internal/configuration"
 	"errors"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -15,6 +16,42 @@ var client *mongo.Client
 
 type Repository struct {
 	config configuration.Configuration
+}
+
+func (repository *Repository) GetTotalForYear(year int) []primitive.M {
+	connect(repository.config)
+	coll := repository.getCollection()
+	filter := bson.M{
+		"$and": []bson.M{
+			{"readingdate": bson.D{{
+				Key: "$gte", Value: time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC),
+			}}},
+			{"readingdate": bson.D{{
+				Key: "$lte", Value: time.Date(year, 12, 31, 0, 0, 0, 0, time.UTC),
+			}}},
+		},
+	}
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: "readingdate", Value: 1}, {Key: "reading", Value: 1}}).
+		SetProjection(bson.D{{Key: "reading", Value: 1}, {Key: "rate", Value: 1}, {Key: "_id", Value: 0}})
+
+	cursor, err := coll.Find(context.TODO(), filter, opts)
+
+	if err == mongo.ErrNoDocuments {
+		return nil
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		panic(err)
+	}
+
+	return results
 }
 
 func (repository *Repository) GetAll(pageParams PageParams) []primitive.M {
@@ -86,6 +123,10 @@ func (repository *Repository) Insert(data bson.M) (id interface{}, err error) {
 
 	connect(repository.config)
 	coll := repository.getCollection()
+
+	date, _ := time.Parse(time.RFC3339Nano, data["readingdate"].(string))
+
+	data["readingdate"] = date
 
 	result, err := coll.InsertOne(context.TODO(), data)
 

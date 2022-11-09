@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -42,6 +43,21 @@ func (api *ReadingApi) get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.response.Ok(ResponseParams{w, result})
+}
+
+func (api *ReadingApi) getTotalForYear(w http.ResponseWriter, r *http.Request) {
+	year, _ := strconv.Atoi(mux.Vars(r)["year"])
+
+	result := api.repository.GetTotalForYear(year)
+
+	if result == nil {
+		api.response.NotFound(ResponseParams{W: w})
+		return
+	}
+
+	total, nTotal := getTotalForYear(result)
+
+	api.response.Ok(ResponseParams{W: w, Result: bson.M{"Day": total, "Night": nTotal}})
 }
 
 func (api *ReadingApi) count(w http.ResponseWriter, r *http.Request) {
@@ -139,6 +155,11 @@ func (api *ReadingApi) HandleRequests() {
 		Queries("skip", "{skip:[0-9]+}", "take", "{take:[0-9]+}", "sort", "{sort}", "filter", "{filter}").
 		Methods(http.MethodGet, http.MethodOptions).
 		HandlerFunc(api.middleware.Options(api.middleware.Authorize(api.get, ACCESS_CLAIM)))
+
+	subRoute.
+		Path(api.getReadingRoute("{year:[0-9]+}/total")).
+		Methods(http.MethodGet, http.MethodOptions).
+		HandlerFunc(api.middleware.Options(api.middleware.Authorize(api.getTotalForYear, ACCESS_CLAIM)))
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", api.config.HTTP_PORT), subRoute))
 }

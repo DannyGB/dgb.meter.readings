@@ -35,4 +35,4 @@ jobs:
           context: .
           file: ./build/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/meter:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/meter:0.8

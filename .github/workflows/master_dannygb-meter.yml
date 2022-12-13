@@ -30,7 +30,7 @@ jobs:
       with:
         context: .
         push: true
-        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_2ecfa127c3574c1f843e640edab73941 }}/dannygb/meter:${{ github.sha }}
+        tags: ${{ secrets.AzureAppService_ContainerUsername_2ecfa127c3574c1f843e640edab73941 }}/meter:${{ github.sha }}
         file: ./build/Dockerfile
 
   deploy:

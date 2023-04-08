@@ -28,7 +28,7 @@ func (response *Response) NotFound(p ResponseParams) {
 }
 
 func (response *Response) BadRequest(p ResponseParams) {
-	response.Write(p.W, 403, p.Result)
+	response.Write(p.W, 400, p.Result)
 }
 
 func (response *Response) ServerError(p ResponseParams) {

@@ -9,7 +9,11 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}/cmd/meter.readings"
+            "program": "${workspaceFolder}/cmd/meter.readings",
+            "env": {
+              "METER_READINGS_HTTP_PORT": "8001",
+              "METER_READINGS_ENV" : "Dev1"
+            }
         }
     ]
 }

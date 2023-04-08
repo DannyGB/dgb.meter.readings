@@ -1,10 +1,19 @@
-FROM golang:1.19.1
+FROM golang:1.19.1 AS build
 
-RUN mkdir /app
+RUN mkdir -p /app/elec
 
-COPY . /app
+COPY . /app/elec
 
-WORKDIR /app/cmd/meter.readings
+WORKDIR /app/elec/cmd/meter.readings
+
+RUN go build -o meter.readings .
+
+FROM golang:1.19.1 AS final
+
+RUN mkdir -p /app/elec/cmd/meter.readings
+WORKDIR /app/elec/cmd/meter.readings
+
+COPY --from=build /app/elec/cmd/meter.readings/meter.readings .
 
 ARG ENVIRONMENT=dev
 ENV METER_READINGS_ENVIRONMENT $ENVIRONMENT
@@ -24,6 +33,4 @@ ENV METER_READINGS_MONGO_CONNECTION $MONGO_CONNECTION
 ARG CORS_CLIENTS="*"
 ENV METER_READINGS_CORS_CLIENTS $CORS_CLIENTS
 
-RUN go build -o meter.readings .
-
-CMD [ "/app/cmd/meter.readings/meter.readings" ]
+CMD [ "/app/elec/cmd/meter.readings/meter.readings" ]

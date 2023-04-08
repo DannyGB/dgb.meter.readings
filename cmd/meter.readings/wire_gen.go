@@ -19,7 +19,7 @@ func CreateApi() *application.ReadingApi {
 	configurationConfiguration := configuration.NewConfig(meterEnvironment)
 	response := application.NewResponse(configurationConfiguration)
 	repository := database.NewRepository(configurationConfiguration)
-	middleware := application.NewMiddleware(response)
+	middleware := application.NewMiddleware(response, configurationConfiguration)
 	readingApi := application.NewApi(response, configurationConfiguration, repository, middleware)
 	return readingApi
 }

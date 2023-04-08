@@ -8,6 +8,7 @@ type Configuration struct {
 	MONGO_COLLECTION string
 	HTTP_PORT        string
 	CORS_CLIENTS     string
+	ENV              string
 }
 
 func NewConfig(env MeterEnvironment) Configuration {
@@ -22,6 +23,7 @@ func NewConfig(env MeterEnvironment) Configuration {
 	configuration.MONGO_COLLECTION = os.Getenv("METER_READINGS_MONGO_COLLECTION")
 	configuration.MONGO_DB = os.Getenv("METER_READINGS_MONGO_DB")
 	configuration.MONGO_CONNECTION = os.Getenv("METER_READINGS_MONGO_CONNECTION")
+	configuration.ENV = os.Getenv("METER_READINGS_ENV")
 
 	return *configuration
 }

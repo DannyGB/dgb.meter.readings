@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"dgb/meter.readings/internal/configuration"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -13,6 +15,7 @@ import (
 
 type Middleware struct {
 	response *Response
+	config   configuration.Configuration
 }
 
 func (middleware *Middleware) Options(next http.HandlerFunc) http.HandlerFunc {
@@ -29,13 +32,15 @@ func (middleware *Middleware) Options(next http.HandlerFunc) http.HandlerFunc {
 
 func (middleware *Middleware) Authorize(next http.HandlerFunc, accessClaim string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := middleware.verifyToken(r, accessClaim)
 
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		if middleware.config.ENV != "Dev" {
+			_, err := middleware.verifyToken(r, accessClaim)
+
+			if err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
 		}
-
 		next(w, r)
 	}
 }
@@ -90,8 +95,9 @@ func (middleware *Middleware) checkClaim(token *jwt.Token, accessClaim string) (
 	return claims["scp"] == accessClaim, ok
 }
 
-func NewMiddleware(response *Response) *Middleware {
+func NewMiddleware(response *Response, configuration configuration.Configuration) *Middleware {
 	return &Middleware{
 		response,
+		configuration,
 	}
 }
